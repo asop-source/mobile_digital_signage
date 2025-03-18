@@ -3,9 +3,10 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:io';
 import 'dart:async';
+import 'package:webview_flutter/webview_flutter.dart'; // Import paket webview_flutter
 
 void main() {
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -18,7 +19,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: ApiExamplePage(),
+      home: const ApiExamplePage(),
     );
   }
 }
@@ -27,14 +28,14 @@ class ApiExamplePage extends StatefulWidget {
   const ApiExamplePage({super.key});
 
   @override
-  ApiExamplePageState createState() => ApiExamplePageState(); // Public class
+  ApiExamplePageState createState() => ApiExamplePageState();
 }
 
 class ApiExamplePageState extends State<ApiExamplePage> {
   final TextEditingController ipServerController = TextEditingController();
   final TextEditingController cmsKeyController = TextEditingController();
+  final TextEditingController displayNameController = TextEditingController();
   String macAddress = "Mengambil IP...";
-  String responseMessage = "";
   Timer? _timer;
 
   @override
@@ -51,7 +52,7 @@ class ApiExamplePageState extends State<ApiExamplePage> {
   }
 
   void _startAutoRefresh() {
-    _timer = Timer.periodic(Duration(minutes: 5), (timer) {
+    _timer = Timer.periodic(const Duration(minutes: 5), (timer) {
       sendDataToApi();
     });
   }
@@ -74,12 +75,13 @@ class ApiExamplePageState extends State<ApiExamplePage> {
   Future<void> sendDataToApi() async {
     final String ipServer = ipServerController.text;
     final String cmsKey = cmsKeyController.text;
+    final String displayName = displayNameController.text;
 
     // Validasi input
-    if (ipServer.isEmpty || cmsKey.isEmpty) {
-      setState(() {
-        responseMessage = "IP Server dan CMS Key harus diisi!";
-      });
+    if (ipServer.isEmpty || cmsKey.isEmpty || displayName.isEmpty) {
+      if (mounted) {
+        _showErrorDialog(context, "Harap periksa konfigurasi");
+      }
       return;
     }
 
@@ -87,15 +89,15 @@ class ApiExamplePageState extends State<ApiExamplePage> {
     try {
       final result = await InternetAddress.lookup('google.com');
       if (result.isEmpty || result[0].rawAddress.isEmpty) {
-        setState(() {
-          responseMessage = "Tidak ada koneksi internet!";
-        });
+        if (mounted) {
+          _showErrorDialog(context, "Koneksi internet terputus");
+        }
         return;
       }
     } on SocketException catch (_) {
-      setState(() {
-        responseMessage = "Tidak ada koneksi internet!";
-      });
+      if (mounted) {
+        _showErrorDialog(context, "Koneksi internet terputus");
+      }
       return;
     }
 
@@ -109,31 +111,87 @@ class ApiExamplePageState extends State<ApiExamplePage> {
         body: jsonEncode(<String, String>{
           'ip_server': ipServer,
           'cms_key': cmsKey,
+          'display_name': displayName,
           'mac_address': macAddress,
         }),
       );
 
       if (response.statusCode == 200) {
-        setState(() {
-          responseMessage = "Data berhasil dikirim: ${response.body}";
-        });
+        final responseData = jsonDecode(response.body);
+        if (responseData['success'] == true) {
+          if (mounted) {
+            _showSuccessDialog(context, "Login Berhasil", () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => WebViewPage(url: responseData['url']), // Arahkan ke WebViewPage
+                ),
+              );
+            });
+          }
+        } else {
+          if (mounted) {
+            _showErrorDialog(context, "Login Gagal");
+          }
+        }
       } else {
-        setState(() {
-          responseMessage = "Gagal mengirim data: ${response.statusCode} - ${response.body}";
-        });
+        if (mounted) {
+          _showErrorDialog(context, "Login Gagal");
+        }
       }
     } catch (e) {
-      setState(() {
-        responseMessage = "Terjadi kesalahan: $e";
-      });
+      if (mounted) {
+        _showErrorDialog(context, "Koneksi internet terputus");
+      }
     }
+  }
+
+  void _showSuccessDialog(BuildContext context, String message, VoidCallback onPressed) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Sukses"),
+          content: Text(message),
+          actions: <Widget>[
+            TextButton(
+              child: Text("OK"),
+              onPressed: () {
+                Navigator.of(context).pop();
+                onPressed();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showErrorDialog(BuildContext context, String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Error"),
+          content: Text(message),
+          actions: <Widget>[
+            TextButton(
+              child: Text("OK"),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Digital Signage App', style: TextStyle(color: Colors.white)),
+        title: const Text('Digital Signage App', style: TextStyle(color: Colors.white)),
         centerTitle: true,
         flexibleSpace: Container(
           decoration: BoxDecoration(
@@ -146,19 +204,18 @@ class ApiExamplePageState extends State<ApiExamplePage> {
         ),
       ),
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.purpleAccent.shade100, Colors.blueAccent.shade100],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
+        color: Colors.grey[200],
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              // Input IP Server
+              Image.asset(
+                'assets/images/img.webp',
+                height: 100,
+                width: 100,
+              ),
+              SizedBox(height: 20),
               TextField(
                 controller: ipServerController,
                 decoration: InputDecoration(
@@ -176,8 +233,6 @@ class ApiExamplePageState extends State<ApiExamplePage> {
                 ),
               ),
               SizedBox(height: 20),
-
-              // Input CMS Key
               TextField(
                 controller: cmsKeyController,
                 decoration: InputDecoration(
@@ -188,39 +243,35 @@ class ApiExamplePageState extends State<ApiExamplePage> {
                   filled: true,
                   fillColor: Color.fromRGBO(255, 255, 255, 0.8),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10.0),
+                    borderRadius: BorderRadius.circular(5.0),
                     borderSide: BorderSide.none,
                   ),
                   prefixIcon: Icon(Icons.vpn_key, color: Colors.deepPurple),
                 ),
               ),
               SizedBox(height: 20),
-
-              // Menampilkan MAC Address (IP Address)
-              Card(
-                elevation: 5,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10.0),
-                ),
-                child: Container(
-                  padding: EdgeInsets.all(16.0),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Colors.purpleAccent, Colors.blueAccent],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(10.0),
+              TextField(
+                controller: displayNameController,
+                decoration: InputDecoration(
+                  labelText: 'Display Name',
+                  labelStyle: TextStyle(color: Colors.deepPurple),
+                  hintText: 'Contoh: Kopi Jakarta',
+                  hintStyle: TextStyle(color: Color.fromRGBO(103, 58, 183, 0.6)),
+                  filled: true,
+                  fillColor: Color.fromRGBO(255, 255, 255, 0.8),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(5.0),
+                    borderSide: BorderSide.none,
                   ),
-                  child: Text(
-                    'MAC Address (IP): $macAddress',
-                    style: TextStyle(fontSize: 16, color: Colors.white),
-                  ),
+                  prefixIcon: Icon(Icons.business, color: Colors.deepPurple),
                 ),
               ),
               SizedBox(height: 20),
-
-              // Tombol Kirim Data
+              Text(
+                'IP Address: $macAddress',
+                style: TextStyle(fontSize: 16, color: Colors.black),
+              ),
+              SizedBox(height: 20),
               ElevatedButton(
                 onPressed: sendDataToApi,
                 style: ElevatedButton.styleFrom(
@@ -233,22 +284,8 @@ class ApiExamplePageState extends State<ApiExamplePage> {
                   elevation: 5,
                 ),
                 child: Text(
-                  'Kirim Data ke API',
+                  'LOGIN',
                   style: TextStyle(fontSize: 16, color: Colors.white),
-                ),
-              ),
-              SizedBox(height: 20),
-
-              // Menampilkan Pesan Respons
-              AnimatedSwitcher(
-                duration: Duration(milliseconds: 300),
-                child: Text(
-                  key: ValueKey(responseMessage),
-                  responseMessage,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: responseMessage.contains("berhasil") ? Colors.green : Colors.red,
-                  ),
                 ),
               ),
             ],
@@ -257,4 +294,83 @@ class ApiExamplePageState extends State<ApiExamplePage> {
       ),
     );
   }
+}
+class WebViewPage extends StatefulWidget {
+  final String url;
+
+  const WebViewPage({super.key, required this.url});
+
+  @override
+  WebViewPageState createState() => WebViewPageState();
+}
+
+class WebViewPageState extends State<WebViewPage> {
+  late final WebViewController _controller;
+  bool _isLoading = true;
+  bool _isValidUrl = true;
+
+  @override
+  void initState() {
+    super.initState();
+    if (Uri.tryParse(widget.url)?.hasAbsolutePath ?? false) {
+      _controller = WebViewController()
+        ..setJavaScriptMode(JavaScriptMode.unrestricted)
+        ..setNavigationDelegate(
+          NavigationDelegate(
+            onPageStarted: (String url) {
+              if (mounted) {
+                setState(() {
+                  _isLoading = true;
+                });
+              }
+            },
+            onPageFinished: (String url) {
+              if (mounted) {
+                setState(() {
+                  _isLoading = false;
+                });
+              }
+            },
+            onWebResourceError: (WebResourceError error) {
+              if (mounted) {
+                setState(() {
+                  _isLoading = false;
+                });
+              }
+            },
+          ),
+        )
+        ..loadRequest(Uri.parse(widget.url));
+    } else {
+      _isValidUrl = false;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: false, // Nonaktifkan navigasi kembali default
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Preview Device'),
+        ),
+        body: _isValidUrl
+            ? Stack(
+          children: [
+            WebViewWidget(
+              controller: _controller,
+            ),
+            if (_isLoading)
+              Center(
+                child: CircularProgressIndicator(),
+              ),
+          ],
+        )
+            : Center(
+          child: Text('URL tidak valid'),
+        ),
+      ),
+    );
+  }
+
 }
