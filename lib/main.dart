@@ -16,9 +16,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Digital Signage App',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
+      theme: ThemeData(primarySwatch: Colors.blue),
       home: const ApiExamplePage(),
     );
   }
@@ -105,9 +103,7 @@ class ApiExamplePageState extends State<ApiExamplePage> {
     try {
       final response = await http.post(
         Uri.parse("http://$ipServer/api/devices/connect"),
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
+        headers: <String, String>{'Content-Type': 'application/json; charset=UTF-8'},
         body: jsonEncode(<String, String>{
           'ip_server': ipServer,
           'cms_key': cmsKey,
@@ -121,10 +117,12 @@ class ApiExamplePageState extends State<ApiExamplePage> {
         if (responseData['success'] == true) {
           if (mounted) {
             _showSuccessDialog(context, "Login Berhasil", () {
+              print(responseData['url']);
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => WebViewPage(url: responseData['url']), // Arahkan ke WebViewPage
+                  builder:
+                      (context) => WebViewPage(url: responseData['url']), // Arahkan ke WebViewPage
                 ),
               );
             });
@@ -190,6 +188,7 @@ class ApiExamplePageState extends State<ApiExamplePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[200],
       appBar: AppBar(
         title: const Text('Digital Signage App', style: TextStyle(color: Colors.white)),
         centerTitle: true,
@@ -207,94 +206,98 @@ class ApiExamplePageState extends State<ApiExamplePage> {
         color: Colors.grey[200],
         child: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              Image.asset(
-                'assets/images/img.webp',
-                height: 100,
-                width: 100,
-              ),
-              SizedBox(height: 20),
-              TextField(
-                controller: ipServerController,
-                decoration: InputDecoration(
-                  labelText: 'IP Server',
-                  labelStyle: TextStyle(color: Colors.deepPurple),
-                  hintText: 'Contoh: 103.171.84.235',
-                  hintStyle: TextStyle(color: Color.fromRGBO(103, 58, 183, 0.6)),
-                  filled: true,
-                  fillColor: Color.fromRGBO(255, 255, 255, 0.8),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10.0),
-                    borderSide: BorderSide.none,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Image.asset('assets/images/img.webp', height: 100, width: 100),
+                SizedBox(height: 20),
+                TextField(
+                  controller: ipServerController,
+                  decoration: InputDecoration(
+                    labelText: 'IP Server',
+                    labelStyle: TextStyle(color: Colors.deepPurple),
+                    hintText: 'Contoh: 103.171.84.235',
+                    hintStyle: TextStyle(color: Color.fromRGBO(103, 58, 183, 0.6)),
+                    filled: true,
+                    fillColor: Color.fromRGBO(255, 255, 255, 0.8),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10.0),
+                      borderSide: BorderSide.none,
+                    ),
+                    prefixIcon: Icon(Icons.dns, color: Colors.deepPurple),
                   ),
-                  prefixIcon: Icon(Icons.dns, color: Colors.deepPurple),
                 ),
-              ),
-              SizedBox(height: 20),
-              TextField(
-                controller: cmsKeyController,
-                decoration: InputDecoration(
-                  labelText: 'CMS Key',
-                  labelStyle: TextStyle(color: Colors.deepPurple),
-                  hintText: 'Contoh: ThIsIsApPcMSKey',
-                  hintStyle: TextStyle(color: Color.fromRGBO(103, 58, 183, 0.6)),
-                  filled: true,
-                  fillColor: Color.fromRGBO(255, 255, 255, 0.8),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(5.0),
-                    borderSide: BorderSide.none,
+                SizedBox(height: 20),
+                TextField(
+                  controller: cmsKeyController,
+                  decoration: InputDecoration(
+                    labelText: 'CMS Key',
+                    labelStyle: TextStyle(color: Colors.deepPurple),
+                    hintText: 'Contoh: ThIsIsApPcMSKey',
+                    hintStyle: TextStyle(color: Color.fromRGBO(103, 58, 183, 0.6)),
+                    filled: true,
+                    fillColor: Color.fromRGBO(255, 255, 255, 0.8),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(5.0),
+                      borderSide: BorderSide.none,
+                    ),
+                    prefixIcon: Icon(Icons.vpn_key, color: Colors.deepPurple),
                   ),
-                  prefixIcon: Icon(Icons.vpn_key, color: Colors.deepPurple),
                 ),
-              ),
-              SizedBox(height: 20),
-              TextField(
-                controller: displayNameController,
-                decoration: InputDecoration(
-                  labelText: 'Display Name',
-                  labelStyle: TextStyle(color: Colors.deepPurple),
-                  hintText: 'Contoh: Kopi Jakarta',
-                  hintStyle: TextStyle(color: Color.fromRGBO(103, 58, 183, 0.6)),
-                  filled: true,
-                  fillColor: Color.fromRGBO(255, 255, 255, 0.8),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(5.0),
-                    borderSide: BorderSide.none,
+                SizedBox(height: 20),
+                TextField(
+                  controller: displayNameController,
+                  decoration: InputDecoration(
+                    labelText: 'Display Name',
+                    labelStyle: TextStyle(color: Colors.deepPurple),
+                    hintText: 'Contoh: Kopi Jakarta',
+                    hintStyle: TextStyle(color: Color.fromRGBO(103, 58, 183, 0.6)),
+                    filled: true,
+                    fillColor: Color.fromRGBO(255, 255, 255, 0.8),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(5.0),
+                      borderSide: BorderSide.none,
+                    ),
+                    prefixIcon: Icon(Icons.business, color: Colors.deepPurple),
                   ),
-                  prefixIcon: Icon(Icons.business, color: Colors.deepPurple),
                 ),
-              ),
-              SizedBox(height: 20),
-              Text(
-                'IP Address: $macAddress',
-                style: TextStyle(fontSize: 16, color: Colors.black),
-              ),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: sendDataToApi,
-                style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10.0),
+                SizedBox(height: 20),
+                Text(
+                  'IP Address: $macAddress',
+                  style: TextStyle(fontSize: 16, color: Colors.black),
+                ),
+                SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: sendDataToApi,
+                  // onPressed: () {
+                  //   Navigator.push(
+                  //     context,
+                  //     MaterialPageRoute(
+                  //       builder:
+                  //           (context) =>
+                  //               WebViewPage(url: 'https://google.com'), // Arahkan ke WebViewPage
+                  //     ),
+                  //   );
+                  // },
+                  style: ElevatedButton.styleFrom(
+                    padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
+                    backgroundColor: Colors.deepPurple,
+                    shadowColor: Color.fromRGBO(103, 58, 183, 0.5),
+                    elevation: 5,
                   ),
-                  backgroundColor: Colors.deepPurple,
-                  shadowColor: Color.fromRGBO(103, 58, 183, 0.5),
-                  elevation: 5,
+                  child: Text('LOGIN', style: TextStyle(fontSize: 16, color: Colors.white)),
                 ),
-                child: Text(
-                  'LOGIN',
-                  style: TextStyle(fontSize: 16, color: Colors.white),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 }
+
 class WebViewPage extends StatefulWidget {
   final String url;
 
@@ -305,42 +308,44 @@ class WebViewPage extends StatefulWidget {
 }
 
 class WebViewPageState extends State<WebViewPage> {
-  late final WebViewController _controller;
+  late WebViewController _controller;
   bool _isLoading = true;
   bool _isValidUrl = true;
 
   @override
   void initState() {
     super.initState();
+    print(Uri.tryParse(widget.url)?.hasAbsolutePath);
     if (Uri.tryParse(widget.url)?.hasAbsolutePath ?? false) {
-      _controller = WebViewController()
-        ..setJavaScriptMode(JavaScriptMode.unrestricted)
-        ..setNavigationDelegate(
-          NavigationDelegate(
-            onPageStarted: (String url) {
-              if (mounted) {
-                setState(() {
-                  _isLoading = true;
-                });
-              }
-            },
-            onPageFinished: (String url) {
-              if (mounted) {
-                setState(() {
-                  _isLoading = false;
-                });
-              }
-            },
-            onWebResourceError: (WebResourceError error) {
-              if (mounted) {
-                setState(() {
-                  _isLoading = false;
-                });
-              }
-            },
-          ),
-        )
-        ..loadRequest(Uri.parse(widget.url));
+      _controller =
+          WebViewController()
+            ..setJavaScriptMode(JavaScriptMode.unrestricted)
+            ..setNavigationDelegate(
+              NavigationDelegate(
+                onPageStarted: (String url) {
+                  if (mounted) {
+                    setState(() {
+                      _isLoading = true;
+                    });
+                  }
+                },
+                onPageFinished: (String url) {
+                  if (mounted) {
+                    setState(() {
+                      _isLoading = false;
+                    });
+                  }
+                },
+                onWebResourceError: (WebResourceError error) {
+                  if (mounted) {
+                    setState(() {
+                      _isLoading = false;
+                    });
+                  }
+                },
+              ),
+            )
+            ..loadRequest(Uri.parse(widget.url));
     } else {
       _isValidUrl = false;
     }
@@ -351,26 +356,17 @@ class WebViewPageState extends State<WebViewPage> {
     return PopScope(
       canPop: false, // Nonaktifkan navigasi kembali default
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Preview Device'),
-        ),
-        body: _isValidUrl
-            ? Stack(
-          children: [
-            WebViewWidget(
-              controller: _controller,
-            ),
-            if (_isLoading)
-              Center(
-                child: CircularProgressIndicator(),
-              ),
-          ],
-        )
-            : Center(
-          child: Text('URL tidak valid'),
-        ),
+        appBar: AppBar(title: const Text('Preview Device')),
+        body:
+            _isValidUrl
+                ? Stack(
+                  children: [
+                    WebViewWidget(controller: _controller),
+                    if (_isLoading) Center(child: CircularProgressIndicator()),
+                  ],
+                )
+                : Center(child: Text('URL tidak valid')),
       ),
     );
   }
-
 }
