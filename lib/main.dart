@@ -117,6 +117,8 @@ class ApiExamplePageState extends State<ApiExamplePage> {
         }),
       );
 
+      print(response.body);
+
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
         if (responseData['success'] == true) {
@@ -359,9 +361,20 @@ class WebViewPageState extends State<WebViewPage> {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: false, // Nonaktifkan navigasi kembali default
+      canPop: true, // Nonaktifkan navigasi kembali default
       child: Scaffold(
-        appBar: AppBar(title: const Text('Preview Device')),
+        appBar: AppBar(
+          title: const Text('Preview Device'),
+          centerTitle: true,
+          actions: [
+            IconButton(
+              icon: Icon(Icons.refresh),
+              onPressed: () {
+                _controller.reload();
+              },
+            ),
+          ],
+        ),
         body:
             _isValidUrl
                 ? Stack(
