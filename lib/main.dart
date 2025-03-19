@@ -3,9 +3,14 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:io';
 import 'dart:async';
-import 'package:webview_flutter/webview_flutter.dart'; // Import paket webview_flutter
+import 'package:webview_flutter/webview_flutter.dart';
 
-void main() {
+import 'config/permission_handler.dart'; // Import paket webview_flutter
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await PermissionHandler().init();
+
   runApp(const MyApp());
 }
 
