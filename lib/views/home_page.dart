@@ -293,15 +293,16 @@ class HomePageState extends State<HomePage> {
                   ElevatedButton(
                     onPressed: () {
                       FocusScope.of(context).unfocus();
-                      sendDataToApi();
-                      // Navigator.push(
-                      //   context,
-                      //   MaterialPageRoute(
-                      //     builder:
-                      //         (context) =>
-                      //             WebViewPage(url: 'https://www.google.com/search?q=flutter'), // Arahkan ke WebViewPage
-                      //   ),
-                      // );
+                      // sendDataToApi();
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (context) => WebViewPage(
+                                url: 'https://www.google.com/search?q=flutter',
+                              ), // Arahkan ke WebViewPage
+                        ),
+                      );
                     },
                     style: ElevatedButton.styleFrom(
                       padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
