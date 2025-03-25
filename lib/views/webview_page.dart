@@ -44,6 +44,7 @@ class WebViewPageState extends State<WebViewPage> {
                       _isLoading = false;
                     });
                     _stopAutoRefresh(); // Hentikan auto-refresh setelah halaman berhasil dimuat
+                    print('Page finished: $url');
                   }
                 },
                 onWebResourceError: (WebResourceError error) {
@@ -51,6 +52,7 @@ class WebViewPageState extends State<WebViewPage> {
                     _isLoading = false; // Sembunyikan loading indicator
                   });
                   _startAutoRefresh(); // Mulai auto-refresh ketika terjadi error
+                  print('Error: ${error.errorCode} - ${error.description}');
                 },
               ),
             )
@@ -76,10 +78,16 @@ class WebViewPageState extends State<WebViewPage> {
 
   void hideSystemUI() {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersive);
+    setState(() {
+      isFullScreen = true;
+    });
   }
 
   void showSystemUI() {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    setState(() {
+      isFullScreen = false;
+    });
   }
 
   @override
@@ -91,27 +99,39 @@ class WebViewPageState extends State<WebViewPage> {
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: false, // Nonaktifkan navigasi kembali default
+    return WillPopScope(
+      onWillPop: () {
+        showSystemUI();
+        print(isFullScreen);
+        return Future.value(false);
+      },
       child: Scaffold(
-        // appBar: AppBar(
-        //   title: const Text('Preview Device'),
-        //   centerTitle: true,
-        //   leading: IconButton(
-        //     icon: Icon(Icons.logout, color: Colors.red),
-        //     onPressed: () {
-        //       Navigator.pop(context);
-        //     },
-        //   ),
-        //   actions: [
-        //     IconButton(
-        //       icon: Icon(Icons.refresh),
-        //       onPressed: () {
-        //         _controller.reload();
-        //       },
-        //     ),
-        //   ],
-        // ),
+        appBar:
+            isFullScreen == true
+                ? null
+                : AppBar(
+                  title: const Text('Preview Device'),
+                  centerTitle: true,
+                  // leading: IconButton(
+                  //   icon: Icon(Icons.logout, color: Colors.red),
+                  //   onPressed: () {
+                  //     Navigator.pop(context);
+                  //   },
+                  // ),
+                  automaticallyImplyLeading: false,
+                  actions: [
+                    IconButton(
+                      icon: Icon(Icons.fullscreen),
+                      onPressed: () {
+                        if (isFullScreen) {
+                          showSystemUI();
+                        } else {
+                          hideSystemUI();
+                        }
+                      },
+                    ),
+                  ],
+                ),
         body:
             _isValidUrl
                 ? SafeArea(
