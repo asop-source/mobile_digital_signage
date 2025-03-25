@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:io';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -13,7 +15,7 @@ class WebViewPage extends StatefulWidget {
   WebViewPageState createState() => WebViewPageState();
 }
 
-class WebViewPageState extends State<WebViewPage> {
+class WebViewPageState extends State<WebViewPage> with WidgetsBindingObserver {
   late WebViewController _controller;
   bool _isLoading = true;
   bool _isValidUrl = true;
@@ -23,6 +25,7 @@ class WebViewPageState extends State<WebViewPage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     hideSystemUI();
     print(Uri.tryParse(widget.url)?.hasAbsolutePath);
     if (Uri.tryParse(widget.url)?.hasAbsolutePath ?? false) {
@@ -76,10 +79,24 @@ class WebViewPageState extends State<WebViewPage> {
     _refreshTimer?.cancel(); // Hentikan timer
   }
 
-  void hideSystemUI() {
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersive);
+  void hideSystemUI() async {
+    // Untuk Android 10+ (edge-to-edge)
+    // 1. Gunakan immersiveSticky untuk menyembunyikan sepenuhnya
+    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky, overlays: []);
+    SystemUiMode.immersiveSticky;
+    SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.light,
+      systemNavigationBarColor: Colors.transparent,
+      systemNavigationBarIconBrightness: Brightness.light,
+    );
+
+    // 3. Delay kecil untuk memastikan perubahan diterapkan
+    await Future.delayed(const Duration(milliseconds: 300));
+
     setState(() {
       isFullScreen = true;
+      WakelockPlus.toggle(enable: isFullScreen);
     });
   }
 
@@ -87,12 +104,14 @@ class WebViewPageState extends State<WebViewPage> {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     setState(() {
       isFullScreen = false;
+      WakelockPlus.toggle(enable: isFullScreen);
     });
   }
 
   @override
   void dispose() {
     _refreshTimer?.cancel(); // Batalkan timer saat widget di-dispose
+    WidgetsBinding.instance.removeObserver(this);
     showSystemUI();
     super.dispose();
   }
@@ -105,42 +124,32 @@ class WebViewPageState extends State<WebViewPage> {
         print(isFullScreen);
         return Future.value(false);
       },
-      child: Scaffold(
-        appBar:
-            isFullScreen == true
-                ? null
-                : AppBar(
-                  title: const Text('Preview Device'),
-                  centerTitle: true,
-                  // leading: IconButton(
-                  //   icon: Icon(Icons.logout, color: Colors.red),
-                  //   onPressed: () {
-                  //     Navigator.pop(context);
-                  //   },
-                  // ),
-                  automaticallyImplyLeading: false,
-                  actions: [
-                    IconButton(
-                      icon: Icon(Icons.fullscreen),
-                      onPressed: () {
-                        if (isFullScreen) {
-                          showSystemUI();
-                        } else {
-                          hideSystemUI();
-                        }
-                      },
-                    ),
-                  ],
-                ),
-        body:
+      child: Container(
+        decoration: BoxDecoration(color: Colors.transparent),
+        child:
             _isValidUrl
-                ? SafeArea(
-                  child: Stack(
-                    children: [
-                      WebViewWidget(controller: _controller),
-                      if (_isLoading) Center(child: CircularProgressIndicator()),
-                    ],
-                  ),
+                ? Stack(
+                  children: [
+                    WebViewWidget(controller: _controller),
+                    Positioned(
+                      bottom: 50,
+                      right: 0,
+                      child: Visibility(
+                        visible: !isFullScreen,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            if (isFullScreen) {
+                              showSystemUI();
+                            } else {
+                              hideSystemUI();
+                            }
+                          },
+                          child: Text(isFullScreen ? 'Show System UI' : 'FullScreen'),
+                        ),
+                      ),
+                    ),
+                    if (_isLoading) Center(child: CircularProgressIndicator()),
+                  ],
                 )
                 : Center(child: Text('URL tidak valid')),
       ),
