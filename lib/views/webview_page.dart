@@ -46,7 +46,7 @@ class WebViewPageState extends State<WebViewPage> with WidgetsBindingObserver {
                     setState(() {
                       _isLoading = false;
                     });
-                    _stopAutoRefresh(); // Hentikan auto-refresh setelah halaman berhasil dimuat
+                    // _stopAutoRefresh(); // Hentikan auto-refresh setelah halaman berhasil dimuat
                     print('Page finished: $url');
                   }
                 },
@@ -54,7 +54,7 @@ class WebViewPageState extends State<WebViewPage> with WidgetsBindingObserver {
                   setState(() {
                     _isLoading = false; // Sembunyikan loading indicator
                   });
-                  _startAutoRefresh(); // Mulai auto-refresh ketika terjadi error
+                  // _startAutoRefresh(); // Mulai auto-refresh ketika terjadi error
                   print('Error: ${error.errorCode} - ${error.description}');
                 },
               ),
@@ -65,19 +65,19 @@ class WebViewPageState extends State<WebViewPage> with WidgetsBindingObserver {
     }
   }
 
-  void _startAutoRefresh() {
-    // Jadwalkan refresh setiap 5 detik
-    _refreshTimer = Timer.periodic(Duration(seconds: 5), (timer) {
-      if (_isLoading == false) {
-        // Hanya refresh jika tidak sedang loading
-        _controller.reload(); // Refresh halaman
-      }
-    });
-  }
+  // void _startAutoRefresh() {
+  //   // Jadwalkan refresh setiap 5 detik
+  //   _refreshTimer = Timer.periodic(Duration(seconds: 5), (timer) {
+  //     if (_isLoading == false) {
+  //       // Hanya refresh jika tidak sedang loading
+  //       _controller.reload(); // Refresh halaman
+  //     }
+  //   });
+  // }
 
-  void _stopAutoRefresh() {
-    _refreshTimer?.cancel(); // Hentikan timer
-  }
+  // void _stopAutoRefresh() {
+  //   _refreshTimer?.cancel(); // Hentikan timer
+  // }
 
   void hideSystemUI() async {
     // Untuk Android 10+ (edge-to-edge)
@@ -110,7 +110,7 @@ class WebViewPageState extends State<WebViewPage> with WidgetsBindingObserver {
 
   @override
   void dispose() {
-    _refreshTimer?.cancel(); // Batalkan timer saat widget di-dispose
+    // _refreshTimer?.cancel(); // Batalkan timer saat widget di-dispose
     WidgetsBinding.instance.removeObserver(this);
     showSystemUI();
     super.dispose();
