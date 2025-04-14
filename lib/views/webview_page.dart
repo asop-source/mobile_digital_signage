@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart' as InAppWebView;
 
 class WebViewPage extends StatefulWidget {
   final String url;
@@ -16,7 +18,15 @@ class WebViewPage extends StatefulWidget {
 }
 
 class WebViewPageState extends State<WebViewPage> with WidgetsBindingObserver {
-  late WebViewController _controller;
+  WebViewController? _controller;
+  InAppWebView.InAppWebViewController? webViewController;
+  InAppWebView.InAppWebViewSettings settings =
+      InAppWebView.InAppWebViewSettings(
+        isInspectable: kDebugMode,
+        mediaPlaybackRequiresUserGesture: false,
+        allowsInlineMediaPlayback: true,
+        iframeAllowFullscreen: true,
+      );
   bool _isLoading = true;
   bool _isValidUrl = true;
   Timer? _refreshTimer; // Timer untuk auto-refresh
@@ -29,37 +39,56 @@ class WebViewPageState extends State<WebViewPage> with WidgetsBindingObserver {
     hideSystemUI();
     print(Uri.tryParse(widget.url)?.hasAbsolutePath);
     if (Uri.tryParse(widget.url)?.hasAbsolutePath ?? false) {
-      _controller =
-          WebViewController()
-            ..setJavaScriptMode(JavaScriptMode.unrestricted)
-            ..setNavigationDelegate(
-              NavigationDelegate(
-                onPageStarted: (String url) {
-                  if (mounted) {
+      if (Platform.isWindows) {
+        _isLoading = false; // Set loading indicator ke false untuk Windows
+        webViewController?.loadUrl(
+          urlRequest: InAppWebView.URLRequest(
+            url: InAppWebView.WebUri(widget.url),
+          ),
+        );
+        webViewController?.setOptions(
+          options: InAppWebView.InAppWebViewGroupOptions(
+            crossPlatform: InAppWebView.InAppWebViewOptions(
+              javaScriptEnabled: true,
+              mediaPlaybackRequiresUserGesture: false,
+              useOnDownloadStart: true,
+              useOnLoadResource: true,
+            ),
+          ),
+        );
+      } else {
+        _controller =
+            WebViewController()
+              ..setJavaScriptMode(JavaScriptMode.unrestricted)
+              ..setNavigationDelegate(
+                NavigationDelegate(
+                  onPageStarted: (String url) {
+                    if (mounted) {
+                      setState(() {
+                        _isLoading = true;
+                      });
+                    }
+                  },
+                  onPageFinished: (String url) {
+                    if (mounted) {
+                      setState(() {
+                        _isLoading = false;
+                      });
+                      // _stopAutoRefresh(); // Hentikan auto-refresh setelah halaman berhasil dimuat
+                      print('Page finished: $url');
+                    }
+                  },
+                  onWebResourceError: (WebResourceError error) {
                     setState(() {
-                      _isLoading = true;
+                      _isLoading = false; // Sembunyikan loading indicator
                     });
-                  }
-                },
-                onPageFinished: (String url) {
-                  if (mounted) {
-                    setState(() {
-                      _isLoading = false;
-                    });
-                    // _stopAutoRefresh(); // Hentikan auto-refresh setelah halaman berhasil dimuat
-                    print('Page finished: $url');
-                  }
-                },
-                onWebResourceError: (WebResourceError error) {
-                  setState(() {
-                    _isLoading = false; // Sembunyikan loading indicator
-                  });
-                  // _startAutoRefresh(); // Mulai auto-refresh ketika terjadi error
-                  print('Error: ${error.errorCode} - ${error.description}');
-                },
-              ),
-            )
-            ..loadRequest(Uri.parse(widget.url));
+                    // _startAutoRefresh(); // Mulai auto-refresh ketika terjadi error
+                    print('Error: ${error.errorCode} - ${error.description}');
+                  },
+                ),
+              )
+              ..loadRequest(Uri.parse(widget.url));
+      }
     } else {
       _isValidUrl = false;
     }
@@ -82,7 +111,10 @@ class WebViewPageState extends State<WebViewPage> with WidgetsBindingObserver {
   void hideSystemUI() async {
     // Untuk Android 10+ (edge-to-edge)
     // 1. Gunakan immersiveSticky untuk menyembunyikan sepenuhnya
-    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky, overlays: []);
+    await SystemChrome.setEnabledSystemUIMode(
+      SystemUiMode.immersiveSticky,
+      overlays: [],
+    );
     SystemUiMode.immersiveSticky;
     SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
@@ -130,7 +162,24 @@ class WebViewPageState extends State<WebViewPage> with WidgetsBindingObserver {
             _isValidUrl
                 ? Stack(
                   children: [
-                    WebViewWidget(controller: _controller),
+                    Visibility(
+                      visible: Platform.isWindows == false,
+                      replacement: InAppWebView.InAppWebView(
+                        initialUrlRequest: InAppWebView.URLRequest(
+                          url: InAppWebView.WebUri(widget.url),
+                        ),
+                        initialSettings: settings,
+                        onWebViewCreated: (
+                          InAppWebView.InAppWebViewController controller,
+                        ) {
+                          webViewController = controller;
+                        },
+                      ),
+                      child:
+                          _controller != null
+                              ? WebViewWidget(controller: _controller!)
+                              : Center(child: Text('Loading WebView...')),
+                    ),
                     Positioned(
                       bottom: 50,
                       right: 0,
@@ -144,11 +193,17 @@ class WebViewPageState extends State<WebViewPage> with WidgetsBindingObserver {
                               hideSystemUI();
                             }
                           },
-                          child: Text(isFullScreen ? 'Show System UI' : 'FullScreen'),
+                          child: Text(
+                            isFullScreen ? 'Show System UI' : 'FullScreen',
+                          ),
                         ),
                       ),
                     ),
-                    if (_isLoading) Center(child: CircularProgressIndicator()),
+                    if (_isLoading)
+                      Visibility(
+                        visible: Platform.isWindows == false,
+                        child: Center(child: CircularProgressIndicator()),
+                      ),
                   ],
                 )
                 : Center(child: Text('URL tidak valid')),

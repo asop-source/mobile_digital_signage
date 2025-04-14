@@ -16,6 +16,8 @@ class MySharedPref {
   /// init get storage services
   static Future<void> init() async {
     sharedPreferences = await SharedPreferences.getInstance();
+
+    await clear();
   }
 
   static setStorage(SharedPreferences sharedPreferences) {
@@ -28,7 +30,8 @@ class MySharedPref {
   static String? getIpServer() => sharedPreferences!.getString(_ipServer);
 
   /// cmsKey
-  static Future<void> setCmsKey(String cmsKey) => sharedPreferences!.setString(_cmsKey, cmsKey);
+  static Future<void> setCmsKey(String cmsKey) =>
+      sharedPreferences!.setString(_cmsKey, cmsKey);
   static String? getCmsKey() => sharedPreferences!.getString(_cmsKey);
 
   /// displayName

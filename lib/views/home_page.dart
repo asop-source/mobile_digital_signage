@@ -8,6 +8,7 @@ import 'package:signage/config/shared_preferences_helper.dart';
 
 import '../helper/helper.dart';
 import 'webview_page.dart';
+import 'package:responsive_ui/responsive_ui.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -51,7 +52,10 @@ class HomePageState extends State<HomePage> {
     cmsKeyController.text = cmsKey ?? "";
     displayNameController.text = displayName ?? "";
 
-    if (ipServer != null && cmsKey != null && displayName != null && urlDevice != null) {
+    if (ipServer != null &&
+        cmsKey != null &&
+        displayName != null &&
+        urlDevice != null) {
       setState(() {
         isLoadingWidget = false;
       });
@@ -61,7 +65,9 @@ class HomePageState extends State<HomePage> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => WebViewPage(url: urlDevice), // Arahkan ke WebViewPage
+            builder:
+                (context) =>
+                    WebViewPage(url: urlDevice), // Arahkan ke WebViewPage
           ),
         );
       });
@@ -151,7 +157,9 @@ class HomePageState extends State<HomePage> {
     try {
       final response = await http.post(
         Uri.parse("http://${ipServerController.text}/api/devices/connect"),
-        headers: <String, String>{'Content-Type': 'application/json; charset=UTF-8'},
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
         body: jsonEncode(<String, String>{
           'ip_server': ipServerController.text,
           'cms_key': cmsKeyController.text,
@@ -173,12 +181,16 @@ class HomePageState extends State<HomePage> {
           await MySharedPref.setUrlDevice(responseData['url']);
 
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Login Berhasil')));
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text('Login Berhasil')));
             Navigator.push(
               context,
               MaterialPageRoute(
                 builder:
-                    (context) => WebViewPage(url: responseData['url']), // Arahkan ke WebViewPage
+                    (context) => WebViewPage(
+                      url: responseData['url'],
+                    ), // Arahkan ke WebViewPage
               ),
             );
           }
@@ -192,7 +204,10 @@ class HomePageState extends State<HomePage> {
         }
       } else {
         if (mounted) {
-          Helper.showErrorDialog(context, "Login Gagal: Status Code ${response.statusCode}");
+          Helper.showErrorDialog(
+            context,
+            "Login Gagal: Status Code ${response.statusCode}",
+          );
         }
       }
     } catch (e) {
@@ -210,7 +225,10 @@ class HomePageState extends State<HomePage> {
     return Scaffold(
       backgroundColor: Colors.grey[200],
       appBar: AppBar(
-        title: const Text('Digital Signage App', style: TextStyle(color: Colors.white)),
+        title: const Text(
+          'Digital Signage App',
+          style: TextStyle(color: Colors.white),
+        ),
         centerTitle: true,
         flexibleSpace: Container(
           decoration: BoxDecoration(
@@ -228,90 +246,144 @@ class HomePageState extends State<HomePage> {
           color: Colors.grey[200],
           child: Padding(
             padding: const EdgeInsets.all(16.0),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+            child: Center(
+              child: Responsive(
+                alignment: WrapAlignment.center,
+                crossAxisAlignment: WrapCrossAlignment.center,
+
                 children: <Widget>[
-                  Image.asset('assets/images/img.webp', height: 100, width: 100),
-                  SizedBox(height: 20),
-                  TextField(
-                    controller: ipServerController,
-                    decoration: InputDecoration(
-                      labelText: 'IP Server',
-                      labelStyle: TextStyle(color: Colors.deepPurple),
-                      hintText: 'Contoh: 103.171.84.235',
-                      hintStyle: TextStyle(color: Color.fromRGBO(103, 58, 183, 0.6)),
-                      filled: true,
-                      fillColor: Color.fromRGBO(255, 255, 255, 0.8),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10.0),
-                        borderSide: BorderSide.none,
+                  Div(
+                    divison: Division(colS: 12, colM: 12, colL: 6),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Image.asset(
+                          'assets/images/img.webp',
+                          height: 100,
+                          width: 100,
+                        ),
+                        SizedBox(height: 20),
+                      ],
+                    ),
+                  ),
+                  Div(
+                    divison: Division(colS: 12, colM: 12, colL: 6),
+                    child: Center(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+
+                        children: [
+                          TextField(
+                            controller: ipServerController,
+                            decoration: InputDecoration(
+                              labelText: 'IP Server',
+                              labelStyle: TextStyle(color: Colors.deepPurple),
+                              hintText: 'Contoh: 103.171.84.235',
+                              hintStyle: TextStyle(
+                                color: Color.fromRGBO(103, 58, 183, 0.6),
+                              ),
+                              filled: true,
+                              fillColor: Color.fromRGBO(255, 255, 255, 0.8),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10.0),
+                                borderSide: BorderSide.none,
+                              ),
+                              prefixIcon: Icon(
+                                Icons.dns,
+                                color: Colors.deepPurple,
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: 20),
+                          TextField(
+                            controller: cmsKeyController,
+                            decoration: InputDecoration(
+                              labelText: 'CMS Key',
+                              labelStyle: TextStyle(color: Colors.deepPurple),
+                              hintText: 'Contoh: ThIsIsApPcMSKey',
+                              hintStyle: TextStyle(
+                                color: Color.fromRGBO(103, 58, 183, 0.6),
+                              ),
+                              filled: true,
+                              fillColor: Color.fromRGBO(255, 255, 255, 0.8),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(5.0),
+                                borderSide: BorderSide.none,
+                              ),
+                              prefixIcon: Icon(
+                                Icons.vpn_key,
+                                color: Colors.deepPurple,
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: 20),
+                          TextField(
+                            controller: displayNameController,
+                            decoration: InputDecoration(
+                              labelText: 'Display Name',
+                              labelStyle: TextStyle(color: Colors.deepPurple),
+                              hintText: 'Contoh: Kopi Jakarta',
+                              hintStyle: TextStyle(
+                                color: Color.fromRGBO(103, 58, 183, 0.6),
+                              ),
+                              filled: true,
+                              fillColor: Color.fromRGBO(255, 255, 255, 0.8),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(5.0),
+                                borderSide: BorderSide.none,
+                              ),
+                              prefixIcon: Icon(
+                                Icons.business,
+                                color: Colors.deepPurple,
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: 20),
+                          Text(
+                            'IP Address: $macAddress',
+                            style: TextStyle(fontSize: 16, color: Colors.black),
+                          ),
+                          SizedBox(height: 20),
+                          ElevatedButton(
+                            onPressed: () {
+                              FocusScope.of(context).unfocus();
+                              sendDataToApi();
+                              // Navigator.push(
+                              //   context,
+                              //   MaterialPageRoute(
+                              //     builder:
+                              //         (context) => WebViewPage(
+                              //           url: 'https://www.google.com/search?q=flutter',
+                              //         ), // Arahkan ke WebViewPage
+                              //   ),
+                              // );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 40,
+                                vertical: 15,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10.0),
+                              ),
+                              backgroundColor: Colors.deepPurple,
+                              shadowColor: Color.fromRGBO(103, 58, 183, 0.5),
+                              elevation: 5,
+                            ),
+                            child: Text(
+                              'LOGIN',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      prefixIcon: Icon(Icons.dns, color: Colors.deepPurple),
                     ),
-                  ),
-                  SizedBox(height: 20),
-                  TextField(
-                    controller: cmsKeyController,
-                    decoration: InputDecoration(
-                      labelText: 'CMS Key',
-                      labelStyle: TextStyle(color: Colors.deepPurple),
-                      hintText: 'Contoh: ThIsIsApPcMSKey',
-                      hintStyle: TextStyle(color: Color.fromRGBO(103, 58, 183, 0.6)),
-                      filled: true,
-                      fillColor: Color.fromRGBO(255, 255, 255, 0.8),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(5.0),
-                        borderSide: BorderSide.none,
-                      ),
-                      prefixIcon: Icon(Icons.vpn_key, color: Colors.deepPurple),
-                    ),
-                  ),
-                  SizedBox(height: 20),
-                  TextField(
-                    controller: displayNameController,
-                    decoration: InputDecoration(
-                      labelText: 'Display Name',
-                      labelStyle: TextStyle(color: Colors.deepPurple),
-                      hintText: 'Contoh: Kopi Jakarta',
-                      hintStyle: TextStyle(color: Color.fromRGBO(103, 58, 183, 0.6)),
-                      filled: true,
-                      fillColor: Color.fromRGBO(255, 255, 255, 0.8),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(5.0),
-                        borderSide: BorderSide.none,
-                      ),
-                      prefixIcon: Icon(Icons.business, color: Colors.deepPurple),
-                    ),
-                  ),
-                  SizedBox(height: 20),
-                  Text(
-                    'IP Address: $macAddress',
-                    style: TextStyle(fontSize: 16, color: Colors.black),
-                  ),
-                  SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: () {
-                      FocusScope.of(context).unfocus();
-                      sendDataToApi();
-                      // Navigator.push(
-                      //   context,
-                      //   MaterialPageRoute(
-                      //     builder:
-                      //         (context) => WebViewPage(
-                      //           url: 'https://www.google.com/search?q=flutter',
-                      //         ), // Arahkan ke WebViewPage
-                      //   ),
-                      // );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
-                      backgroundColor: Colors.deepPurple,
-                      shadowColor: Color.fromRGBO(103, 58, 183, 0.5),
-                      elevation: 5,
-                    ),
-                    child: Text('LOGIN', style: TextStyle(fontSize: 16, color: Colors.white)),
                   ),
                 ],
               ),
