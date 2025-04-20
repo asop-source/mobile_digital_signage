@@ -93,24 +93,24 @@ class HomePageState extends State<HomePage> {
     }
   }
 
-  Future<void> checkInternetConnection() async {
-    _timer = Timer.periodic(Duration(seconds: 5), (timer) async {
-      try {
-        final result = await InternetAddress.lookup('google.com');
-        if (result.isEmpty || result[0].rawAddress.isEmpty) {
-          if (mounted) {
-            Helper.showErrorDialog(context, "Koneksi internet terputus");
-          }
-          return;
-        }
-      } on SocketException catch (_) {
-        if (mounted) {
-          Helper.showErrorDialog(context, "Koneksi internet terputus");
-        }
-        return;
-      }
-    });
-  }
+  //   Future<void> checkInternetConnection() async {
+  //     _timer = Timer.periodic(Duration(seconds: 5), (timer) async {
+  //       try {
+  //         final result = await InternetAddress.lookup('google.com');
+  //         if (result.isEmpty || result[0].rawAddress.isEmpty) {
+  //           if (mounted) {
+  //             Helper.showErrorDialog(context, "Koneksi internet terputus");
+  //           }
+  //           return;
+  //         }
+  //       } on SocketException catch (_) {
+  //         if (mounted) {
+  //           Helper.showErrorDialog(context, "Koneksi internet terputus");
+  //         }
+  //         return;
+  //       }
+  //     });
+  //   }
 
   Future<void> sendDataToApi() async {
     // Flag untuk menghindari double trigger
@@ -143,15 +143,15 @@ class HomePageState extends State<HomePage> {
     }
 
     // Cek koneksi internet
-    try {
-      await checkInternetConnection();
-    } catch (e) {
-      if (mounted) {
-        Helper.showErrorDialog(context, "Tidak ada koneksi internet");
-      }
-      isLoadingApi = false; // Reset flag
-      return;
-    }
+    // try {
+    //   await checkInternetConnection();
+    // } catch (e) {
+    //   if (mounted) {
+    //     Helper.showErrorDialog(context, "Tidak ada koneksi internet");
+    //   }
+    //   isLoadingApi = false; // Reset flag
+    //   return;
+    // }
 
     // Kirim data ke API
     try {

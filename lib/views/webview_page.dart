@@ -29,7 +29,7 @@ class WebViewPageState extends State<WebViewPage> with WidgetsBindingObserver {
       );
   bool _isLoading = true;
   bool _isValidUrl = true;
-  Timer? _refreshTimer; // Timer untuk auto-refresh
+  // Timer? _refreshTimer; // Timer untuk auto-refresh
   bool isFullScreen = false;
 
   @override
