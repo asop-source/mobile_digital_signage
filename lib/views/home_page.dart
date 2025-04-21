@@ -180,6 +180,13 @@ class HomePageState extends State<HomePage> {
           await MySharedPref.setDisplayName(displayNameController.text);
           await MySharedPref.setUrlDevice(responseData['url']);
 
+          print('Data disimpan ke SharedPreferences');
+          print('IP Server: ${MySharedPref.getIpServer()}');
+          print('CMS Key: ${MySharedPref.getCmsKey()}');
+          print('Display Name: ${MySharedPref.getDisplayName()}');
+          print('URL Device: ${MySharedPref.getUrlDevice()}');
+          // Navigasi ke WebViewPage setelah login berhasil
+
           if (mounted) {
             ScaffoldMessenger.of(
               context,

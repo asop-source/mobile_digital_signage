@@ -16,8 +16,6 @@ class MySharedPref {
   /// init get storage services
   static Future<void> init() async {
     sharedPreferences = await SharedPreferences.getInstance();
-
-    await clear();
   }
 
   static setStorage(SharedPreferences sharedPreferences) {

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:signage/config/shared_preferences_helper.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import 'package:flutter/material.dart';
@@ -185,17 +186,31 @@ class WebViewPageState extends State<WebViewPage> with WidgetsBindingObserver {
                       right: 0,
                       child: Visibility(
                         visible: !isFullScreen,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            if (isFullScreen) {
-                              showSystemUI();
-                            } else {
-                              hideSystemUI();
-                            }
-                          },
-                          child: Text(
-                            isFullScreen ? 'Show System UI' : 'FullScreen',
-                          ),
+                        child: Row(
+                          children: [
+                            ElevatedButton(
+                              onPressed: () {
+                                showSystemUI();
+                                MySharedPref.clear();
+                                // Hapus semua data dari shared preferences
+                                Navigator.pop(context);
+                              },
+                              child: const Text('Logout'),
+                            ),
+                            const SizedBox(width: 10),
+                            ElevatedButton(
+                              onPressed: () {
+                                if (isFullScreen) {
+                                  showSystemUI();
+                                } else {
+                                  hideSystemUI();
+                                }
+                              },
+                              child: Text(
+                                isFullScreen ? 'Show System UI' : 'FullScreen',
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),

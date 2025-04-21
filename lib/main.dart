@@ -9,7 +9,7 @@ import 'config/permission_handler.dart';
 import 'config/shared_preferences_helper.dart';
 import 'views/home_page.dart'; // Import paket webview_flutter
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await PermissionHandler().init();
   await MySharedPref.init();
