@@ -8,7 +8,6 @@ import 'package:signage/config/shared_preferences_helper.dart';
 
 import '../helper/helper.dart';
 import 'webview_page.dart';
-import 'package:responsive_ui/responsive_ui.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -26,6 +25,11 @@ class HomePageState extends State<HomePage> {
   bool isLoadingWidget = true;
   bool isLoadingApi = false;
 
+  // Palette disamakan dengan halaman login CMS
+  static const Color deepBlue = Color(0xFF253A72);
+  static const Color midBlue = Color(0xFF2D499D);
+  static const Color softBlue = Color(0xFF3F5491);
+
   @override
   void initState() {
     super.initState();
@@ -39,6 +43,9 @@ class HomePageState extends State<HomePage> {
   @override
   void dispose() {
     _timer?.cancel();
+    ipServerController.dispose();
+    cmsKeyController.dispose();
+    displayNameController.dispose();
     super.dispose();
   }
 
@@ -60,15 +67,10 @@ class HomePageState extends State<HomePage> {
         isLoadingWidget = false;
       });
 
-      // Gunakan addPostFrameCallback untuk navigasi
       WidgetsBinding.instance.addPostFrameCallback((_) {
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder:
-                (context) =>
-                    WebViewPage(url: urlDevice), // Arahkan ke WebViewPage
-          ),
+          MaterialPageRoute(builder: (context) => WebViewPage(url: urlDevice)),
         );
       });
     } else {
@@ -93,44 +95,24 @@ class HomePageState extends State<HomePage> {
     }
   }
 
-  //   Future<void> checkInternetConnection() async {
-  //     _timer = Timer.periodic(Duration(seconds: 5), (timer) async {
-  //       try {
-  //         final result = await InternetAddress.lookup('google.com');
-  //         if (result.isEmpty || result[0].rawAddress.isEmpty) {
-  //           if (mounted) {
-  //             Helper.showErrorDialog(context, "Koneksi internet terputus");
-  //           }
-  //           return;
-  //         }
-  //       } on SocketException catch (_) {
-  //         if (mounted) {
-  //           Helper.showErrorDialog(context, "Koneksi internet terputus");
-  //         }
-  //         return;
-  //       }
-  //     });
-  //   }
-
   Future<void> sendDataToApi() async {
-    // Flag untuk menghindari double trigger
-
-    // Cek apakah proses sedang berjalan
     if (isLoadingApi) return;
-    isLoadingApi = true;
+    setState(() {
+      isLoadingApi = true;
+    });
 
-    // Validasi input
     if (ipServerController.text.isEmpty ||
         cmsKeyController.text.isEmpty ||
         displayNameController.text.isEmpty) {
       if (mounted) {
         Helper.showErrorDialog(context, "Harap periksa konfigurasi");
       }
-      isLoadingApi = false; // Reset flag
+      setState(() {
+        isLoadingApi = false;
+      });
       return;
     }
 
-    // Validasi format IP address (opsional)
     final ipRegex = RegExp(
       r'^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$',
     );
@@ -138,22 +120,12 @@ class HomePageState extends State<HomePage> {
       if (mounted) {
         Helper.showErrorDialog(context, "Format IP server tidak valid");
       }
-      isLoadingApi = false; // Reset flag
+      setState(() {
+        isLoadingApi = false;
+      });
       return;
     }
 
-    // Cek koneksi internet
-    // try {
-    //   await checkInternetConnection();
-    // } catch (e) {
-    //   if (mounted) {
-    //     Helper.showErrorDialog(context, "Tidak ada koneksi internet");
-    //   }
-    //   isLoadingApi = false; // Reset flag
-    //   return;
-    // }
-
-    // Kirim data ke API
     try {
       final response = await http.post(
         Uri.parse("http://${ipServerController.text}/api/devices/connect"),
@@ -168,36 +140,22 @@ class HomePageState extends State<HomePage> {
         }),
       );
 
-      print('Response Status Code: ${response.statusCode}');
-      print('Response Data: ${response.body}');
-
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
         if (responseData['success'] == true) {
-          // Simpan data ke shared preferences
           await MySharedPref.setIpServer(ipServerController.text);
           await MySharedPref.setCmsKey(cmsKeyController.text);
           await MySharedPref.setDisplayName(displayNameController.text);
           await MySharedPref.setUrlDevice(responseData['url']);
 
-          print('Data disimpan ke SharedPreferences');
-          print('IP Server: ${MySharedPref.getIpServer()}');
-          print('CMS Key: ${MySharedPref.getCmsKey()}');
-          print('Display Name: ${MySharedPref.getDisplayName()}');
-          print('URL Device: ${MySharedPref.getUrlDevice()}');
-          // Navigasi ke WebViewPage setelah login berhasil
-
           if (mounted) {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text('Login Berhasil')));
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Perangkat berhasil terhubung')),
+            );
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder:
-                    (context) => WebViewPage(
-                      url: responseData['url'],
-                    ), // Arahkan ke WebViewPage
+                builder: (context) => WebViewPage(url: responseData['url']),
               ),
             );
           }
@@ -205,7 +163,7 @@ class HomePageState extends State<HomePage> {
           if (mounted) {
             Helper.showErrorDialog(
               context,
-              "Login Gagal: ${responseData['message'] ?? 'Tidak ada pesan error'}",
+              "Gagal terhubung: ${responseData['message'] ?? 'Tidak ada pesan error'}",
             );
           }
         }
@@ -213,191 +171,351 @@ class HomePageState extends State<HomePage> {
         if (mounted) {
           Helper.showErrorDialog(
             context,
-            "Login Gagal: Status Code ${response.statusCode}",
+            "Gagal terhubung: Status Code ${response.statusCode}",
           );
         }
       }
     } catch (e) {
-      print('Error: $e');
       if (mounted) {
         Helper.showErrorDialog(context, "Terjadi kesalahan: ${e.toString()}");
       }
     } finally {
-      isLoadingApi = false; // Reset flag setelah proses selesai
+      if (mounted) {
+        setState(() {
+          isLoadingApi = false;
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[200],
-      appBar: AppBar(
-        title: const Text(
-          'Digital Signage App',
-          style: TextStyle(color: Colors.white),
-        ),
-        centerTitle: true,
-        flexibleSpace: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.blueAccent, Colors.purpleAccent],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [deepBlue, midBlue, softBlue],
           ),
         ),
-      ),
-      body: Visibility(
-        visible: isLoadingWidget == false,
-        child: Container(
-          color: Colors.grey[200],
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Center(
-              child: Responsive(
-                alignment: WrapAlignment.center,
-                crossAxisAlignment: WrapCrossAlignment.center,
-
-                children: <Widget>[
-                  Div(
-                    divison: Division(colS: 12, colM: 12, colL: 6),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      mainAxisAlignment: MainAxisAlignment.center,
+        child: isLoadingWidget
+            ? const Center(
+                child: CircularProgressIndicator(color: Colors.white),
+              )
+            : LayoutBuilder(
+                builder: (context, constraints) {
+                  final isWide = constraints.maxWidth >= 900;
+                  if (isWide) {
+                    return Row(
                       children: [
-                        Image.asset(
-                          'assets/images/img.webp',
-                          height: 100,
-                          width: 100,
+                        Expanded(
+                          child: Center(
+                            child: SingleChildScrollView(
+                              padding: const EdgeInsets.all(48),
+                              child: _buildBranding(compact: false),
+                            ),
+                          ),
                         ),
-                        SizedBox(height: 20),
+                        Expanded(
+                          child: Center(
+                            child: SingleChildScrollView(
+                              padding: const EdgeInsets.all(48),
+                              child: _buildFormCard(),
+                            ),
+                          ),
+                        ),
                       ],
-                    ),
-                  ),
-                  Div(
-                    divison: Division(colS: 12, colM: 12, colL: 6),
-                    child: Center(
+                    );
+                  }
+                  return Center(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 40,
+                      ),
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
                         mainAxisAlignment: MainAxisAlignment.center,
-                        mainAxisSize: MainAxisSize.min,
-
                         children: [
-                          TextField(
-                            controller: ipServerController,
-                            decoration: InputDecoration(
-                              labelText: 'IP Server',
-                              labelStyle: TextStyle(color: Colors.deepPurple),
-                              hintText: 'Contoh: 103.171.84.235',
-                              hintStyle: TextStyle(
-                                color: Color.fromRGBO(103, 58, 183, 0.6),
-                              ),
-                              filled: true,
-                              fillColor: Color.fromRGBO(255, 255, 255, 0.8),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10.0),
-                                borderSide: BorderSide.none,
-                              ),
-                              prefixIcon: Icon(
-                                Icons.dns,
-                                color: Colors.deepPurple,
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: 20),
-                          TextField(
-                            controller: cmsKeyController,
-                            decoration: InputDecoration(
-                              labelText: 'CMS Key',
-                              labelStyle: TextStyle(color: Colors.deepPurple),
-                              hintText: 'Contoh: ThIsIsApPcMSKey',
-                              hintStyle: TextStyle(
-                                color: Color.fromRGBO(103, 58, 183, 0.6),
-                              ),
-                              filled: true,
-                              fillColor: Color.fromRGBO(255, 255, 255, 0.8),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(5.0),
-                                borderSide: BorderSide.none,
-                              ),
-                              prefixIcon: Icon(
-                                Icons.vpn_key,
-                                color: Colors.deepPurple,
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: 20),
-                          TextField(
-                            controller: displayNameController,
-                            decoration: InputDecoration(
-                              labelText: 'Display Name',
-                              labelStyle: TextStyle(color: Colors.deepPurple),
-                              hintText: 'Contoh: Kopi Jakarta',
-                              hintStyle: TextStyle(
-                                color: Color.fromRGBO(103, 58, 183, 0.6),
-                              ),
-                              filled: true,
-                              fillColor: Color.fromRGBO(255, 255, 255, 0.8),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(5.0),
-                                borderSide: BorderSide.none,
-                              ),
-                              prefixIcon: Icon(
-                                Icons.business,
-                                color: Colors.deepPurple,
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: 20),
-                          Text(
-                            'IP Address: $macAddress',
-                            style: TextStyle(fontSize: 16, color: Colors.black),
-                          ),
-                          SizedBox(height: 20),
-                          ElevatedButton(
-                            onPressed: () {
-                              FocusScope.of(context).unfocus();
-                              sendDataToApi();
-                              // Navigator.push(
-                              //   context,
-                              //   MaterialPageRoute(
-                              //     builder:
-                              //         (context) => WebViewPage(
-                              //           url: 'https://www.google.com/search?q=flutter',
-                              //         ), // Arahkan ke WebViewPage
-                              //   ),
-                              // );
-                            },
-                            style: ElevatedButton.styleFrom(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 40,
-                                vertical: 15,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10.0),
-                              ),
-                              backgroundColor: Colors.deepPurple,
-                              shadowColor: Color.fromRGBO(103, 58, 183, 0.5),
-                              elevation: 5,
-                            ),
-                            child: Text(
-                              'LOGIN',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
+                          _buildBranding(compact: true),
+                          const SizedBox(height: 32),
+                          _buildFormCard(),
                         ],
                       ),
                     ),
+                  );
+                },
+              ),
+      ),
+    );
+  }
+
+  Widget _buildBranding({required bool compact}) {
+    return Column(
+      crossAxisAlignment:
+          compact ? CrossAxisAlignment.center : CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 72,
+          height: 72,
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.12),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.white.withOpacity(0.25)),
+          ),
+          child: const Icon(Icons.connected_tv, color: Colors.white, size: 38),
+        ),
+        const SizedBox(height: 24),
+        Text(
+          'Digital Signage',
+          textAlign: compact ? TextAlign.center : TextAlign.start,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 34,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.5,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Text(
+          'Hubungkan perangkat ini ke server CMS\nuntuk mulai menayangkan konten.',
+          textAlign: compact ? TextAlign.center : TextAlign.start,
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.75),
+            fontSize: 15,
+            height: 1.6,
+          ),
+        ),
+        if (!compact) ...[
+          const SizedBox(height: 36),
+          _featureRow(Icons.grid_view_rounded, 'Layout & playlist fleksibel'),
+          const SizedBox(height: 14),
+          _featureRow(Icons.schedule_rounded, 'Penjadwalan tayang otomatis'),
+          const SizedBox(height: 14),
+          _featureRow(Icons.wifi_tethering_rounded, 'Update konten real-time'),
+        ],
+      ],
+    );
+  }
+
+  Widget _featureRow(IconData icon, String label) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 38,
+          height: 38,
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.12),
+            borderRadius: BorderRadius.circular(11),
+            border: Border.all(color: Colors.white.withOpacity(0.2)),
+          ),
+          child: Icon(icon, color: Colors.white, size: 19),
+        ),
+        const SizedBox(width: 14),
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.9),
+            fontSize: 14.5,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFormCard() {
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 430),
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.25),
+            blurRadius: 40,
+            offset: const Offset(0, 18),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Hubungkan Perangkat',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF1F2947),
+              letterSpacing: -0.3,
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Isi data koneksi sesuai pengaturan di CMS.',
+            style: TextStyle(fontSize: 13.5, color: Color(0xFF8A92A6)),
+          ),
+          const SizedBox(height: 28),
+          _buildField(
+            controller: ipServerController,
+            label: 'IP Server',
+            hint: 'Contoh: 43.157.206.193',
+            icon: Icons.dns_rounded,
+            keyboardType: TextInputType.number,
+          ),
+          const SizedBox(height: 18),
+          _buildField(
+            controller: cmsKeyController,
+            label: 'CMS Key',
+            hint: 'Kunci dari menu Settings CMS',
+            icon: Icons.vpn_key_rounded,
+          ),
+          const SizedBox(height: 18),
+          _buildField(
+            controller: displayNameController,
+            label: 'Nama Display',
+            hint: 'Contoh: TV Lobby Lantai 1',
+            icon: Icons.tv_rounded,
+          ),
+          const SizedBox(height: 20),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF2F4FA),
+              borderRadius: BorderRadius.circular(11),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.lan_rounded, size: 17, color: softBlue),
+                const SizedBox(width: 10),
+                Text(
+                  'IP perangkat ini: $macAddress',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF576078),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 26),
+          SizedBox(
+            width: double.infinity,
+            height: 52,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(colors: [softBlue, midBlue]),
+                borderRadius: BorderRadius.circular(13),
+                boxShadow: [
+                  BoxShadow(
+                    color: midBlue.withOpacity(0.45),
+                    blurRadius: 18,
+                    offset: const Offset(0, 8),
                   ),
                 ],
               ),
+              child: ElevatedButton(
+                onPressed: isLoadingApi
+                    ? null
+                    : () {
+                        FocusScope.of(context).unfocus();
+                        sendDataToApi();
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  shadowColor: Colors.transparent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(13),
+                  ),
+                ),
+                child: isLoadingApi
+                    ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2.5,
+                        ),
+                      )
+                    : const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'HUBUNGKAN',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                              letterSpacing: 0.8,
+                            ),
+                          ),
+                          SizedBox(width: 8),
+                          Icon(
+                            Icons.arrow_forward_rounded,
+                            color: Colors.white,
+                            size: 19,
+                          ),
+                        ],
+                      ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    required IconData icon,
+    TextInputType? keyboardType,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF576078),
+          ),
+        ),
+        const SizedBox(height: 7),
+        TextField(
+          controller: controller,
+          keyboardType: keyboardType,
+          style: const TextStyle(fontSize: 14.5, color: Color(0xFF1F2947)),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: const TextStyle(
+              color: Color(0xFFAAB0C0),
+              fontSize: 13.5,
+            ),
+            prefixIcon: Icon(icon, color: const Color(0xFFA2A8BA), size: 20),
+            filled: true,
+            fillColor: const Color(0xFFF7F8FC),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 15,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFE6E9F2), width: 1.4),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: softBlue, width: 1.6),
             ),
           ),
         ),
-      ),
+      ],
     );
   }
 }
