@@ -7,6 +7,7 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart' as InAppWebView;
 
 class WebViewPage extends StatefulWidget {
@@ -89,6 +90,14 @@ class WebViewPageState extends State<WebViewPage> with WidgetsBindingObserver {
                 ),
               )
               ..loadRequest(Uri.parse(widget.url));
+
+        // Android WebView requires a user gesture before playing media by
+        // default, which silently blocks the <video autoplay> layout items.
+        // Disable that requirement, matching the Windows InAppWebView config above.
+        if (_controller!.platform is AndroidWebViewController) {
+          (_controller!.platform as AndroidWebViewController)
+              .setMediaPlaybackRequiresUserGesture(false);
+        }
       }
     } else {
       _isValidUrl = false;

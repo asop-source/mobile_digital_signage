@@ -13,6 +13,7 @@ dependencies:
   http: ^1.3.0
   cupertino_icons: ^1.0.8
   webview_flutter: ^4.0.0
+  webview_flutter_android: ^4.10.0
   url_launcher: ^6.3.2 # Tambahkan ini
   permission_handler: ^12.0.1
   shared_preferences: ^2.5.2
@@ -32,3 +33,12 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/img.webp
+
+msix_config:
+  display_name: Digital Signage
+  publisher_display_name: Multi Kencana Niagatama
+  identity_name: com.signage.signage
+  msix_version: 1.0.2.0
+  logo_path: assets/images/img.webp
+  capabilities: internetClient
+  install_certificate: false
