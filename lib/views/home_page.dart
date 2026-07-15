@@ -222,6 +222,11 @@ class HomePageState extends State<HomePage> {
                     builder: (context, constraints) {
                       final isWide = constraints.maxWidth >= 900;
                       final isSmall = constraints.maxWidth < 400;
+                      // Layar pendek (mis. HP dengan konten lebih tinggi dari
+                      // viewport): rapatkan jarak & perkecil elemen agar semua
+                      // muat tanpa scroll dan icon atas tidak terpotong.
+                      final isShort = constraints.maxHeight < 760;
+                      final dense = isSmall || isShort;
                       if (isWide) {
                         return Row(
                           children: [
@@ -244,18 +249,22 @@ class HomePageState extends State<HomePage> {
                           ],
                         );
                       }
-                      return Center(
-                        child: SingleChildScrollView(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: isSmall ? 16 : 24,
-                            vertical: 32,
+                      return SingleChildScrollView(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isSmall ? 16 : 24,
+                          vertical: dense ? 16 : 32,
+                        ),
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            minHeight:
+                                constraints.maxHeight - (dense ? 32 : 64),
                           ),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              _buildBranding(compact: true, small: isSmall),
-                              const SizedBox(height: 28),
-                              _buildFormCard(small: isSmall),
+                              _buildBranding(compact: true, dense: dense),
+                              SizedBox(height: dense ? 18 : 28),
+                              _buildFormCard(dense: dense),
                             ],
                           ),
                         ),
@@ -267,9 +276,9 @@ class HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildBranding({required bool compact, bool small = false}) {
-    final double iconBox = small ? 56 : 72;
-    final double iconSize = small ? 30 : 38;
+  Widget _buildBranding({required bool compact, bool dense = false}) {
+    final double iconBox = dense ? 52 : 72;
+    final double iconSize = dense ? 28 : 38;
     return Column(
       crossAxisAlignment:
           compact ? CrossAxisAlignment.center : CrossAxisAlignment.start,
@@ -279,30 +288,30 @@ class HomePageState extends State<HomePage> {
           height: iconBox,
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.12),
-            borderRadius: BorderRadius.circular(small ? 16 : 20),
+            borderRadius: BorderRadius.circular(dense ? 15 : 20),
             border: Border.all(color: Colors.white.withOpacity(0.25)),
           ),
           child: Icon(Icons.connected_tv, color: Colors.white, size: iconSize),
         ),
-        SizedBox(height: small ? 18 : 24),
+        SizedBox(height: dense ? 14 : 24),
         Text(
           'Digital Signage',
           textAlign: compact ? TextAlign.center : TextAlign.start,
           style: TextStyle(
             color: Colors.white,
-            fontSize: small ? 26 : 34,
+            fontSize: dense ? 24 : 34,
             fontWeight: FontWeight.w700,
             letterSpacing: -0.5,
           ),
         ),
-        const SizedBox(height: 10),
+        SizedBox(height: dense ? 8 : 10),
         Text(
           'Hubungkan perangkat ini ke server CMS\nuntuk mulai menayangkan konten.',
           textAlign: compact ? TextAlign.center : TextAlign.start,
           style: TextStyle(
             color: Colors.white.withOpacity(0.75),
-            fontSize: small ? 13.5 : 15,
-            height: 1.6,
+            fontSize: dense ? 13 : 15,
+            height: 1.5,
           ),
         ),
         if (!compact) ...[
@@ -343,10 +352,11 @@ class HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildFormCard({bool small = false}) {
+  Widget _buildFormCard({bool dense = false}) {
+    final double gap = dense ? 14 : 18;
     return Container(
       constraints: const BoxConstraints(maxWidth: 430),
-      padding: EdgeInsets.all(small ? 22 : 32),
+      padding: EdgeInsets.all(dense ? 20 : 32),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -365,7 +375,7 @@ class HomePageState extends State<HomePage> {
           Text(
             'Hubungkan Perangkat',
             style: TextStyle(
-              fontSize: small ? 19 : 22,
+              fontSize: dense ? 19 : 22,
               fontWeight: FontWeight.w700,
               color: const Color(0xFF1F2947),
               letterSpacing: -0.3,
@@ -376,28 +386,28 @@ class HomePageState extends State<HomePage> {
             'Isi data koneksi sesuai pengaturan di CMS.',
             style: TextStyle(fontSize: 13.5, color: Color(0xFF8A92A6)),
           ),
-          const SizedBox(height: 28),
+          SizedBox(height: dense ? 20 : 28),
           _buildField(
             controller: ipServerController,
             label: 'IP Server',
             hint: 'Contoh: 43.157.206.193',
             icon: Icons.dns_rounded,
           ),
-          const SizedBox(height: 18),
+          SizedBox(height: gap),
           _buildField(
             controller: cmsKeyController,
             label: 'CMS Key',
             hint: 'Kunci dari menu Settings CMS',
             icon: Icons.vpn_key_rounded,
           ),
-          const SizedBox(height: 18),
+          SizedBox(height: gap),
           _buildField(
             controller: displayNameController,
             label: 'Nama Display',
             hint: 'Contoh: TV Lobby Lantai 1',
             icon: Icons.tv_rounded,
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: dense ? 16 : 20),
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
@@ -423,10 +433,10 @@ class HomePageState extends State<HomePage> {
               ],
             ),
           ),
-          const SizedBox(height: 26),
+          SizedBox(height: dense ? 20 : 26),
           SizedBox(
             width: double.infinity,
-            height: 52,
+            height: dense ? 50 : 52,
             child: DecoratedBox(
               decoration: BoxDecoration(
                 gradient: const LinearGradient(colors: [softTeal, midTeal]),
