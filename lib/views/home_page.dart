@@ -25,10 +25,10 @@ class HomePageState extends State<HomePage> {
   bool isLoadingWidget = true;
   bool isLoadingApi = false;
 
-  // Palette disamakan dengan halaman login CMS
-  static const Color deepBlue = Color(0xFF253A72);
-  static const Color midBlue = Color(0xFF2D499D);
-  static const Color softBlue = Color(0xFF3F5491);
+  // Palette disamakan dengan halaman login CMS & icon aplikasi (teal)
+  static const Color deepTeal = Color(0xFF115E59);
+  static const Color midTeal = Color(0xFF0F766E);
+  static const Color softTeal = Color(0xFF14B8A6);
 
   @override
   void initState() {
@@ -82,12 +82,25 @@ class HomePageState extends State<HomePage> {
 
   Future<void> getMacAddress() async {
     try {
-      final interfaces = await NetworkInterface.list();
-      if (interfaces.isNotEmpty) {
-        setState(() {
-          macAddress = interfaces.first.addresses.first.address;
-        });
+      // Ambil IPv4 saja: alamat IPv6 terlalu panjang untuk ditampilkan dan
+      // berganti-ganti (privacy address), padahal nilai ini dipakai server
+      // sebagai kunci unik device.
+      final interfaces = await NetworkInterface.list(
+        type: InternetAddressType.IPv4,
+      );
+      for (final interface in interfaces) {
+        for (final address in interface.addresses) {
+          if (!address.isLoopback) {
+            setState(() {
+              macAddress = address.address;
+            });
+            return;
+          }
+        }
       }
+      setState(() {
+        macAddress = "IP tidak ditemukan";
+      });
     } catch (e) {
       setState(() {
         macAddress = "Gagal mengambil IP";
@@ -196,82 +209,88 @@ class HomePageState extends State<HomePage> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [deepBlue, midBlue, softBlue],
+            colors: [deepTeal, midTeal, softTeal],
           ),
         ),
-        child: isLoadingWidget
-            ? const Center(
-                child: CircularProgressIndicator(color: Colors.white),
-              )
-            : LayoutBuilder(
-                builder: (context, constraints) {
-                  final isWide = constraints.maxWidth >= 900;
-                  if (isWide) {
-                    return Row(
-                      children: [
-                        Expanded(
-                          child: Center(
-                            child: SingleChildScrollView(
-                              padding: const EdgeInsets.all(48),
-                              child: _buildBranding(compact: false),
+        child: SafeArea(
+          child:
+              isLoadingWidget
+                  ? const Center(
+                    child: CircularProgressIndicator(color: Colors.white),
+                  )
+                  : LayoutBuilder(
+                    builder: (context, constraints) {
+                      final isWide = constraints.maxWidth >= 900;
+                      final isSmall = constraints.maxWidth < 400;
+                      if (isWide) {
+                        return Row(
+                          children: [
+                            Expanded(
+                              child: Center(
+                                child: SingleChildScrollView(
+                                  padding: const EdgeInsets.all(48),
+                                  child: _buildBranding(compact: false),
+                                ),
+                              ),
                             ),
+                            Expanded(
+                              child: Center(
+                                child: SingleChildScrollView(
+                                  padding: const EdgeInsets.all(48),
+                                  child: _buildFormCard(),
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      }
+                      return Center(
+                        child: SingleChildScrollView(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: isSmall ? 16 : 24,
+                            vertical: 32,
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              _buildBranding(compact: true, small: isSmall),
+                              const SizedBox(height: 28),
+                              _buildFormCard(small: isSmall),
+                            ],
                           ),
                         ),
-                        Expanded(
-                          child: Center(
-                            child: SingleChildScrollView(
-                              padding: const EdgeInsets.all(48),
-                              child: _buildFormCard(),
-                            ),
-                          ),
-                        ),
-                      ],
-                    );
-                  }
-                  return Center(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 40,
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          _buildBranding(compact: true),
-                          const SizedBox(height: 32),
-                          _buildFormCard(),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
+                      );
+                    },
+                  ),
+        ),
       ),
     );
   }
 
-  Widget _buildBranding({required bool compact}) {
+  Widget _buildBranding({required bool compact, bool small = false}) {
+    final double iconBox = small ? 56 : 72;
+    final double iconSize = small ? 30 : 38;
     return Column(
       crossAxisAlignment:
           compact ? CrossAxisAlignment.center : CrossAxisAlignment.start,
       children: [
         Container(
-          width: 72,
-          height: 72,
+          width: iconBox,
+          height: iconBox,
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.12),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(small ? 16 : 20),
             border: Border.all(color: Colors.white.withOpacity(0.25)),
           ),
-          child: const Icon(Icons.connected_tv, color: Colors.white, size: 38),
+          child: Icon(Icons.connected_tv, color: Colors.white, size: iconSize),
         ),
-        const SizedBox(height: 24),
+        SizedBox(height: small ? 18 : 24),
         Text(
           'Digital Signage',
           textAlign: compact ? TextAlign.center : TextAlign.start,
-          style: const TextStyle(
+          style: TextStyle(
             color: Colors.white,
-            fontSize: 34,
+            fontSize: small ? 26 : 34,
             fontWeight: FontWeight.w700,
             letterSpacing: -0.5,
           ),
@@ -282,7 +301,7 @@ class HomePageState extends State<HomePage> {
           textAlign: compact ? TextAlign.center : TextAlign.start,
           style: TextStyle(
             color: Colors.white.withOpacity(0.75),
-            fontSize: 15,
+            fontSize: small ? 13.5 : 15,
             height: 1.6,
           ),
         ),
@@ -324,10 +343,10 @@ class HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildFormCard() {
+  Widget _buildFormCard({bool small = false}) {
     return Container(
       constraints: const BoxConstraints(maxWidth: 430),
-      padding: const EdgeInsets.all(32),
+      padding: EdgeInsets.all(small ? 22 : 32),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -343,12 +362,12 @@ class HomePageState extends State<HomePage> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Hubungkan Perangkat',
             style: TextStyle(
-              fontSize: 22,
+              fontSize: small ? 19 : 22,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF1F2947),
+              color: const Color(0xFF1F2947),
               letterSpacing: -0.3,
             ),
           ),
@@ -363,7 +382,6 @@ class HomePageState extends State<HomePage> {
             label: 'IP Server',
             hint: 'Contoh: 43.157.206.193',
             icon: Icons.dns_rounded,
-            keyboardType: TextInputType.number,
           ),
           const SizedBox(height: 18),
           _buildField(
@@ -389,14 +407,17 @@ class HomePageState extends State<HomePage> {
             ),
             child: Row(
               children: [
-                const Icon(Icons.lan_rounded, size: 17, color: softBlue),
+                const Icon(Icons.lan_rounded, size: 17, color: softTeal),
                 const SizedBox(width: 10),
-                Text(
-                  'IP perangkat ini: $macAddress',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: Color(0xFF576078),
-                    fontWeight: FontWeight.w500,
+                Flexible(
+                  child: Text(
+                    'IP perangkat ini: $macAddress',
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF576078),
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
               ],
@@ -408,23 +429,24 @@ class HomePageState extends State<HomePage> {
             height: 52,
             child: DecoratedBox(
               decoration: BoxDecoration(
-                gradient: const LinearGradient(colors: [softBlue, midBlue]),
+                gradient: const LinearGradient(colors: [softTeal, midTeal]),
                 borderRadius: BorderRadius.circular(13),
                 boxShadow: [
                   BoxShadow(
-                    color: midBlue.withOpacity(0.45),
+                    color: midTeal.withOpacity(0.45),
                     blurRadius: 18,
                     offset: const Offset(0, 8),
                   ),
                 ],
               ),
               child: ElevatedButton(
-                onPressed: isLoadingApi
-                    ? null
-                    : () {
-                        FocusScope.of(context).unfocus();
-                        sendDataToApi();
-                      },
+                onPressed:
+                    isLoadingApi
+                        ? null
+                        : () {
+                          FocusScope.of(context).unfocus();
+                          sendDataToApi();
+                        },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.transparent,
                   shadowColor: Colors.transparent,
@@ -432,35 +454,36 @@ class HomePageState extends State<HomePage> {
                     borderRadius: BorderRadius.circular(13),
                   ),
                 ),
-                child: isLoadingApi
-                    ? const SizedBox(
-                        width: 22,
-                        height: 22,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2.5,
-                        ),
-                      )
-                    : const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            'HUBUNGKAN',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
-                              letterSpacing: 0.8,
-                            ),
-                          ),
-                          SizedBox(width: 8),
-                          Icon(
-                            Icons.arrow_forward_rounded,
+                child:
+                    isLoadingApi
+                        ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
                             color: Colors.white,
-                            size: 19,
+                            strokeWidth: 2.5,
                           ),
-                        ],
-                      ),
+                        )
+                        : const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'HUBUNGKAN',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                                letterSpacing: 0.8,
+                              ),
+                            ),
+                            SizedBox(width: 8),
+                            Icon(
+                              Icons.arrow_forward_rounded,
+                              color: Colors.white,
+                              size: 19,
+                            ),
+                          ],
+                        ),
               ),
             ),
           ),
@@ -507,11 +530,14 @@ class HomePageState extends State<HomePage> {
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFE6E9F2), width: 1.4),
+              borderSide: const BorderSide(
+                color: Color(0xFFE6E9F2),
+                width: 1.4,
+              ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: softBlue, width: 1.6),
+              borderSide: const BorderSide(color: softTeal, width: 1.6),
             ),
           ),
         ),
