@@ -62,6 +62,12 @@ class WebViewPageState extends State<WebViewPage> with WidgetsBindingObserver {
         _controller =
             WebViewController()
               ..setJavaScriptMode(JavaScriptMode.unrestricted)
+              ..addJavaScriptChannel(
+                'FlutterLogout',
+                onMessageReceived: (JavaScriptMessage message) {
+                  _handleForcedLogout();
+                },
+              )
               ..setNavigationDelegate(
                 NavigationDelegate(
                   onPageStarted: (String url) {
@@ -117,6 +123,17 @@ class WebViewPageState extends State<WebViewPage> with WidgetsBindingObserver {
   // void _stopAutoRefresh() {
   //   _refreshTimer?.cancel(); // Hentikan timer
   // }
+
+  // Dipanggil dari halaman web (via JS channel) saat CMS menolak atau
+  // menghapus device ini, supaya app otomatis kembali ke layar registrasi
+  // tanpa perlu ditekan manual.
+  Future<void> _handleForcedLogout() async {
+    await MySharedPref.clear();
+    if (mounted) {
+      showSystemUI();
+      Navigator.pop(context);
+    }
+  }
 
   void hideSystemUI() async {
     // Untuk Android 10+ (edge-to-edge)
@@ -183,6 +200,12 @@ class WebViewPageState extends State<WebViewPage> with WidgetsBindingObserver {
                           InAppWebView.InAppWebViewController controller,
                         ) {
                           webViewController = controller;
+                          controller.addJavaScriptHandler(
+                            handlerName: 'FlutterLogout',
+                            callback: (args) {
+                              _handleForcedLogout();
+                            },
+                          );
                         },
                       ),
                       child:
@@ -198,12 +221,7 @@ class WebViewPageState extends State<WebViewPage> with WidgetsBindingObserver {
                         child: Row(
                           children: [
                             ElevatedButton(
-                              onPressed: () {
-                                showSystemUI();
-                                MySharedPref.clear();
-                                // Hapus semua data dari shared preferences
-                                Navigator.pop(context);
-                              },
+                              onPressed: _handleForcedLogout,
                               child: const Text('Logout'),
                             ),
                             const SizedBox(width: 10),

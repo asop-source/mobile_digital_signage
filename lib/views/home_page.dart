@@ -200,11 +200,20 @@ class HomePageState extends State<HomePage> {
           }
         }
       } else {
+        String errorMessage = "Status Code ${response.statusCode}";
+        try {
+          final responseData = jsonDecode(response.body);
+          if (responseData['message'] != null) {
+            errorMessage = responseData['message'].toString();
+            if (responseData['data'] != null) {
+              errorMessage += ": ${responseData['data']}";
+            }
+          }
+        } catch (_) {
+          // server nggak balikin JSON (mis. error 500 mentah) - pakai status code saja
+        }
         if (mounted) {
-          Helper.showErrorDialog(
-            context,
-            "Gagal terhubung: Status Code ${response.statusCode}",
-          );
+          Helper.showErrorDialog(context, "Gagal terhubung: $errorMessage");
         }
       }
     } catch (e) {
