@@ -43,3 +43,8 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Built release artifacts - CI publishes these to GitHub Releases now,
+# no need to commit them to the repo.
+/apk/
+/nuget.exe

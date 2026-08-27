@@ -2,7 +2,7 @@ name: Build APK and Windows app
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, fixing]
   workflow_dispatch: {}
 
 jobs:
