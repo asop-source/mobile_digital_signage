@@ -57,7 +57,15 @@ jobs:
 
       - name: Zip Windows build
         run: |
-          $release = Get-ChildItem -Path build/windows -Recurse -Directory -Filter Release | Select-Object -First 1
+          # Every plugin also gets its own per-config "Release" build directory,
+          # so filter down to the one actually nested under "runner" - that's
+          # the folder with the app exe and its bundled assets/DLLs.
+          $release = Get-ChildItem -Path build/windows -Recurse -Directory -Filter Release |
+            Where-Object { $_.Parent.Name -eq 'runner' } |
+            Select-Object -First 1
+          if (-not $release) {
+            throw "Could not find windows/*/runner/Release build output directory"
+          }
           Compress-Archive -Path "$($release.FullName)/*" -DestinationPath signage-windows.zip
 
       - name: Upload Windows artifact
