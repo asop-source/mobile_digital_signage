@@ -126,6 +126,21 @@ class HomePageState extends State<HomePage> {
       return;
     }
 
+    // Terima juga jika user menempel URL lengkap (mis. "https://cms.gavit.id"
+    // atau dengan path/trailing slash) - lucuti skema & path, sisakan host[:port].
+    final rawInput = ipServerController.text.trim();
+    final schemeMatch = RegExp(
+      r'^(https?)://',
+      caseSensitive: false,
+    ).firstMatch(rawInput);
+    final scheme = schemeMatch != null
+        ? schemeMatch.group(1)!.toLowerCase()
+        : 'https';
+    final host = rawInput
+        .replaceFirst(RegExp(r'^https?://', caseSensitive: false), '')
+        .split('/')
+        .first;
+
     // Validasi format IP address atau domain (opsional, boleh diikuti :port)
     final ipv4Pattern =
         r'((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)';
@@ -133,7 +148,7 @@ class HomePageState extends State<HomePage> {
     final hostRegex = RegExp(
       '^($ipv4Pattern|$domainPattern)(:[0-9]{1,5})?\$',
     );
-    if (!hostRegex.hasMatch(ipServerController.text)) {
+    if (!hostRegex.hasMatch(host)) {
       if (mounted) {
         Helper.showErrorDialog(context, "Format IP server tidak valid");
       }
@@ -145,12 +160,12 @@ class HomePageState extends State<HomePage> {
 
     try {
       final response = await http.post(
-        Uri.parse("http://${ipServerController.text}/api/devices/connect"),
+        Uri.parse("$scheme://$host/api/devices/connect"),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         },
         body: jsonEncode(<String, String>{
-          'ip_server': ipServerController.text,
+          'ip_server': host,
           'cms_key': cmsKeyController.text,
           'display_name': displayNameController.text,
           'mac_address': macAddress,
@@ -160,7 +175,7 @@ class HomePageState extends State<HomePage> {
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
         if (responseData['success'] == true) {
-          await MySharedPref.setIpServer(ipServerController.text);
+          await MySharedPref.setIpServer(host);
           await MySharedPref.setCmsKey(cmsKeyController.text);
           await MySharedPref.setDisplayName(displayNameController.text);
           await MySharedPref.setUrlDevice(responseData['url']);
