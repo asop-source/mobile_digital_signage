@@ -33,6 +33,24 @@ class WebViewPageState extends State<WebViewPage> with WidgetsBindingObserver {
   bool _isValidUrl = true;
   // Timer? _refreshTimer; // Timer untuk auto-refresh
   bool isFullScreen = false;
+  Timer? _retryTimer;
+
+  // Perangkat kiosk sering auto-launch app ini sebelum WiFi/DNS-nya benar-benar
+  // siap setelah boot, jadi load pertama gagal (mis. ERR_NAME_NOT_RESOLVED) dan
+  // tanpa retry akan nyangkut di halaman error itu selamanya karena tidak ada
+  // user yang menekan reload. Coba lagi otomatis tiap beberapa detik sampai
+  // berhasil.
+  void _scheduleRetry() {
+    _retryTimer?.cancel();
+    _retryTimer = Timer(const Duration(seconds: 5), () {
+      if (!mounted) return;
+      if (Platform.isWindows) {
+        webViewController?.reload();
+      } else {
+        _controller?.reload();
+      }
+    });
+  }
 
   @override
   void initState() {
@@ -78,6 +96,7 @@ class WebViewPageState extends State<WebViewPage> with WidgetsBindingObserver {
                     }
                   },
                   onPageFinished: (String url) {
+                    _retryTimer?.cancel();
                     if (mounted) {
                       setState(() {
                         _isLoading = false;
@@ -92,6 +111,7 @@ class WebViewPageState extends State<WebViewPage> with WidgetsBindingObserver {
                     });
                     // _startAutoRefresh(); // Mulai auto-refresh ketika terjadi error
                     print('Error: ${error.errorCode} - ${error.description}');
+                    _scheduleRetry();
                   },
                 ),
               )
@@ -170,6 +190,7 @@ class WebViewPageState extends State<WebViewPage> with WidgetsBindingObserver {
   @override
   void dispose() {
     // _refreshTimer?.cancel(); // Batalkan timer saat widget di-dispose
+    _retryTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     showSystemUI();
     super.dispose();
@@ -206,6 +227,13 @@ class WebViewPageState extends State<WebViewPage> with WidgetsBindingObserver {
                               _handleForcedLogout();
                             },
                           );
+                        },
+                        onLoadStop: (controller, url) {
+                          _retryTimer?.cancel();
+                        },
+                        onReceivedError: (controller, request, error) {
+                          print('InAppWebView error: ${error.description}');
+                          _scheduleRetry();
                         },
                       ),
                       child:
