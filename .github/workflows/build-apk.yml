@@ -1,4 +1,4 @@
-name: Build APK
+name: Build APK and Windows app
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
   workflow_dispatch: {}
 
 jobs:
-  build:
+  build-android:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -31,3 +31,32 @@ jobs:
         with:
           name: app-release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Enable Windows desktop
+        run: flutter config --enable-windows-desktop
+
+      - name: Build release Windows app
+        run: flutter build windows --release
+
+      - name: Zip Windows build
+        run: |
+          $release = Get-ChildItem -Path build/windows -Recurse -Directory -Filter Release | Select-Object -First 1
+          Compress-Archive -Path "$($release.FullName)/*" -DestinationPath signage-windows.zip
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-windows
+          path: signage-windows.zip
