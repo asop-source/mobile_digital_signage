@@ -126,10 +126,14 @@ class HomePageState extends State<HomePage> {
       return;
     }
 
-    final ipRegex = RegExp(
-      r'^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$',
+    // Validasi format IP address atau domain (opsional, boleh diikuti :port)
+    final ipv4Pattern =
+        r'((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)';
+    final domainPattern = r'([a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}';
+    final hostRegex = RegExp(
+      '^($ipv4Pattern|$domainPattern)(:[0-9]{1,5})?\$',
     );
-    if (!ipRegex.hasMatch(ipServerController.text)) {
+    if (!hostRegex.hasMatch(ipServerController.text)) {
       if (mounted) {
         Helper.showErrorDialog(context, "Format IP server tidak valid");
       }
